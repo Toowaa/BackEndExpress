@@ -9,7 +9,7 @@ const port = 8000;
 
 app.use(express.json());
 app.use(cors({
-  origin: ['http://localhost:3000', 'https://mi-dominio.com'], // Especifica los dominios permitidos
+  origin: ['http://localhost:3000', 'https://prueba-three-peach.vercel.app'], 
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
