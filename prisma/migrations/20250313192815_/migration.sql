@@ -38,3 +38,8 @@ ALTER TABLE `OrderProduct` ADD CONSTRAINT `OrderProduct_orderId_fkey` FOREIGN KE
 
 -- AddForeignKey
 ALTER TABLE `OrderProduct` ADD CONSTRAINT `OrderProduct_productId_fkey` FOREIGN KEY (`productId`) REFERENCES `Product`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+INSERT INTO Product (name, price, stock) VALUES 
+('Laptop', 1200, 10),
+('Mouse', 25, 50),
+('Keyboard', 45, 30);

@@ -34,16 +34,15 @@ router.post("/order", async (req, res) => {
         return res
           .status(400)
           .json({ message: `Producto ${productId} no encontrado` });
-          Cantidad += quantity;
+      Cantidad += quantity;
       finalPrice += product.price * quantity;
     }
-
 
     const newOrder = await prisma.order.create({
       data: {
         OrderNo: newOrderNo,
         FinalPrice: finalPrice,
-        Quantity:Cantidad,
+        Quantity: Cantidad,
       },
     });
 
@@ -68,27 +67,25 @@ router.post("/order", async (req, res) => {
   }
 });
 
-
 router.get("/order/:id", async (req, res) => {
-  const orderId = parseInt(req.params.id); 
+  const orderId = parseInt(req.params.id);
   try {
-      const order = await prisma.order.findUnique({
-        where: { id:orderId },
-        include: {
-          products: true,
-        },
-      });
-    
-      if (!order) {
-        return res.status(404).json({ message: "No se encontró la orden" });
-      }
-    
-      res.json(order);
-    } catch (error) {
-        console.error("Error al obtener la orden:", error);
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: {
+        products: true,
+      },
+    });
+
+    if (!order) {
+      return res.status(404).json({ message: "No se encontró la orden" });
     }
-   
-  });   
+
+    res.json(order);
+  } catch (error) {
+    console.error("Error al obtener la orden:", error);
+  }
+});
 
 router.delete("/order/:id", async (req, res) => {
   const orderId = parseInt(req.params.id);
@@ -110,11 +107,113 @@ router.delete("/order/:id", async (req, res) => {
       where: { id: orderId },
     });
     res.json({ message: "Orden eliminada con éxito" });
-  }
-  catch (error) {
+  } catch (error) {
     console.error("Error al eliminar la orden:", error);
     res.status(500).json({ message: error.message });
   }
 });
+
+router.put("/order/:id", async (req, res) => {
+  const orderId = parseInt(req.params.id);
+  try {
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: {
+        products: true,
+      },
+    });
+
+    if (!order) {
+      return res.status(404).json({ message: "No se encontró la orden" });
+    }
+
+    const { products } = req.body;
+    if (!products || products.length === 0) {
+      return res
+        .status(400)
+        .json({ message: "La orden debe contener productos" });
+    }
+
+    const existingProducts = await prisma.orderProduct.findMany({
+      where: { orderId: orderId },
+    });
+
+    const newProducts = [];
+
+    for (const { productId, quantity } of products) {
+      const existingProduct = existingProducts.find(
+        (p) => p.productId === productId
+      );
+
+      if (existingProduct) {
+        await prisma.orderProduct.update({
+          where: {
+            orderId_productId: {
+              orderId: orderId,
+              productId: productId,
+            },
+          },
+          data: {
+            quantity: quantity, 
+          },
+        });
+      } else {
+        newProducts.push({ orderId, productId, quantity });
+      }
+    }
+
+    if (newProducts.length > 0) {
+      await prisma.orderProduct.createMany({
+        data: newProducts,
+      });
+    }
+
+    res.json({
+      message: "Productos agregados a la orden con éxito",
+      orderId: orderId,
+    });
+  } catch (error) {
+    console.error("Error al actualizar la orden:", error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+
+router.delete("/order/:orderId/product/:productId", async (req, res) => {
+  const orderId = parseInt(req.params.orderId);
+  const productId = parseInt(req.params.productId);
+
+  try {
+    const existingProduct = await prisma.orderProduct.findUnique({
+      where: {
+        orderId_productId: {
+          orderId: orderId,
+          productId: productId,
+        },
+      },
+    });
+
+    if (!existingProduct) {
+      return res.status(404).json({ message: "El producto no existe en la orden" });
+    }
+
+    await prisma.orderProduct.delete({
+      where: {
+        orderId_productId: {
+          orderId: orderId,
+          productId: productId,
+        },
+      },
+    });
+
+    res.json({
+      message: `Producto ${productId} eliminado de la orden ${orderId} con éxito`,
+    });
+  } catch (error) {
+    console.error("Error al eliminar el producto de la orden:", error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
 
 export default router;
