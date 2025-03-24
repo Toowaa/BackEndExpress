@@ -9,7 +9,7 @@ const port = 8000;
 
 app.use(express.json());
 app.use(cors({
-  origin: ['http://localhost:3000', 'https://prueba-three-peach.vercel.app'], 
+  origin: ['http://localhost:3000', 'https://prueba-three-peach.vercel.app','https://prueba-git-main-toowaas-projects.vercel.app'], 
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
