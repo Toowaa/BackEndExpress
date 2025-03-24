@@ -34,7 +34,7 @@ router.post("/order", async (req, res) => {
         return res
           .status(400)
           .json({ message: `Producto ${productId} no encontrado` });
-      Cantidad += product.quantity;
+      Cantidad += product;
       finalPrice += product.price * quantity;
     }
 
