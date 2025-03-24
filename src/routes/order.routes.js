@@ -118,9 +118,6 @@ router.put("/order/:id", async (req, res) => {
   try {
     const order = await prisma.order.findUnique({
       where: { id: orderId },
-      include: {
-        products: true,
-      },
     });
 
     if (!order) {
@@ -138,9 +135,23 @@ router.put("/order/:id", async (req, res) => {
       where: { orderId: orderId },
     });
 
-    const newProducts = [];
+    let newQuantity = 0;
+    let newFinalPrice = 0;
 
     for (const { productId, quantity } of products) {
+      const product = await prisma.product.findUnique({
+        where: { id: productId },
+      });
+
+      if (!product) {
+        return res
+          .status(400)
+          .json({ message: `Producto ${productId} no encontrado` });
+      }
+
+      newQuantity += quantity;
+      newFinalPrice += product.price * quantity;
+
       const existingProduct = existingProducts.find(
         (p) => p.productId === productId
       );
@@ -153,23 +164,25 @@ router.put("/order/:id", async (req, res) => {
               productId: productId,
             },
           },
-          data: {
-            quantity: quantity, 
-          },
+          data: { quantity },
         });
       } else {
-        newProducts.push({ orderId, productId, quantity });
+        await prisma.orderProduct.create({
+          data: { orderId, productId, quantity },
+        });
       }
     }
 
-    if (newProducts.length > 0) {
-      await prisma.orderProduct.createMany({
-        data: newProducts,
-      });
-    }
+    await prisma.order.update({
+      where: { id: orderId },
+      data: {
+        Quantity: newQuantity,
+        FinalPrice: newFinalPrice,
+      },
+    });
 
     res.json({
-      message: "Productos agregados a la orden con éxito",
+      message: "Orden actualizada con éxito",
       orderId: orderId,
     });
   } catch (error) {
